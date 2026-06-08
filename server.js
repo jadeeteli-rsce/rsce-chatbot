@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
@@ -13,10 +13,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize Google Gemini
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 // Store scraped website content
 let websiteContent = '';
@@ -95,7 +94,7 @@ scrapeWebsite().catch(err => console.error('Failed to scrape website:', err));
 // Re-scrape every 24 hours
 setInterval(scrapeWebsite, 24 * 60 * 60 * 1000);
 
-// Chat endpoint with OpenAI integration
+// Chat endpoint with Google Gemini integration
 app.post('/api/chat', async (req, res) => {
   const userMessage = req.body.message;
 
@@ -115,7 +114,7 @@ app.post('/api/chat', async (req, res) => {
   }
 
   try {
-    // Use OpenAI to find relevant information and generate response
+    // Use Google Gemini to find relevant information and generate response
     const systemPrompt = `You are a helpful assistant for the RSCE (Real Sociedad Canina de España / Royal Canine Society of Spain) website. 
     
 Based on the following website content, answer user questions accurately and helpfully. If the information is not in the provided content, say you don't have that specific information but suggest contacting RSCE directly.
@@ -125,23 +124,11 @@ Keep responses concise (2-3 sentences max) and friendly.
 Website Content:
 ${websiteContent}`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { 
-          role: 'system', 
-          content: systemPrompt 
-        },
-        { 
-          role: 'user', 
-          content: userMessage 
-        }
-      ],
-      max_tokens: 200,
-      temperature: 0.7
-    });
+    const fullPrompt = systemPrompt + '\n\nUser Question: ' + userMessage;
 
-    const reply = completion.choices[0].message.content;
+    const result = await model.generateContent(fullPrompt);
+    const response = result.response;
+    const reply = response.text();
 
     res.json({
       reply: reply,
@@ -150,7 +137,7 @@ ${websiteContent}`;
     });
 
   } catch (error) {
-    console.error('Error calling OpenAI:', error);
+    console.error('Error calling Google Gemini:', error);
     res.json({
       reply: "I encountered an error. Please try again or contact us at support@rsce.es",
       confidence: "low",
@@ -174,7 +161,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'running',
     contentLoaded: websiteContent.length > 0,
-    contentSize: websiteContent.length
+    contentSize: websiteContent.length,
+    aiProvider: 'Google Gemini'
   });
 });
 
@@ -185,5 +173,6 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`RSCE Chatbot is running on port ${PORT}`);
+  console.log(`AI Provider: Google Gemini`);
   console.log(`Open http://localhost:${PORT} in your browser`);
 });
