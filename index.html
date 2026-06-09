@@ -42,8 +42,8 @@ pointer-events: none;
 width: 56px;
 height: 56px;
 border-radius: 50%;
-background: #1a3a5c;
-border: none;
+background: none;
+border: 3px solid #c9a84c;
 cursor: pointer;
 display: flex;
 align-items: center;
@@ -224,7 +224,7 @@ display: none;
 <div id="chat-wrapper">
 <div id="chatbot-container" class="hidden">
 <div id="chat-header">
-<div class="avatar">🐾</div>
+<div class="avatar"><img src="/dog.jpg" style="width:34px;height:34px;border-radius:50%;object-fit:cover;"></div>
 <div class="info">
 <h3>Asistente RSCE</h3>
 <span>En línea</span>
@@ -239,7 +239,7 @@ display: none;
 </div>
  
 <button id="chat-toggle-btn" onclick="toggleChat()" title="Abrir asistente RSCE">
-🐾
+<img src="/dog.jpg" style="width:56px;height:56px;border-radius:50%;object-fit:cover;">
 <div id="notification-dot"></div>
 </button>
 </div>
